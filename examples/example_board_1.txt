@@ -1,0 +1,7 @@
+# Board size and number of colours
+3 3
+
+# Goal board
+1 1 1
+1 0 0
+1 0 0
