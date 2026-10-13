@@ -20,9 +20,9 @@ def build_instance(game, solver_name="gecode"):
     solver = Solver.lookup(solver_name)
     instance = Instance(solver, model)
 
-    instance["n"] = game.size
-    instance["c"] = game.number_of_colours
-    instance["goal"] = game.goal_board
+    instance["board_size"] = game.size
+    instance["number_of_colours"] = game.number_of_colours
+    instance["goal_board"] = game.goal_board
 
     return instance
 
@@ -35,7 +35,7 @@ def solve(game, solver_name="gecode", time_limit=None):
     if result.solution is None:
         raise ValueError("No solution was found for this puzzle instance.")
 
-    return result.solution.clicks
+    return result.solution.clicks_per_square
 
 
 def print_solution(clicks, number_of_colours):

@@ -1,0 +1,34 @@
+\documentclass{article}
+\usepackage[a4paper, margin=2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{titling}
+
+\setlength{\droptitle}{-3cm}
+
+\title{
+    {\small Symbolic Explainable Artificial Intelligence 2026/27}\\[0.3em]
+    \textbf{Alien Tiles Problem}
+}
+
+\author{
+    \textbf{Group 18}\\
+    Artur Krystopchuk 104145\\
+    Sofia Ligeiro 116046 
+}
+
+\begin{document}
+
+\maketitle
+\vspace{-1cm}
+
+\section{CSP Formulation and Solving Approach}
+The problem was encoded as a Constraint Optimisation Problem in MiniZinc. The decision variables $\text{clicks}[i,j] \in \{0, \dots, c-1\}$ denote how many times each cell is clicked; the domain is restricted to $c-1$ per cell without loss of generality, since clicking a cell $c$ times is congruent to not clicking it at all. For every cell $(r,s)$, a modular linear constraint enforces that the cumulative effect of all row $r$ and column $s$ clicks — corrected for the double count on the intersection cell $(r,s)$ itself — equals the goal value $\mod c$, yielding a system of $n^2$ simultaneous congruences. The objective function minimises $\sum_{i,j} \text{clicks}[i,j]$, directly encoding the "fewest moves" criterion central to the original CSPLib formulation. The model is solved via the Gecode finite-domain constraint solver, invoked programmatically through MiniZinc Python, which performs constraint propagation combined with branch-and-bound search to certify optimality of the returned solution. A notable property, established analytically and verified empirically through exhaustive enumeration on small instances, is that the click operation is not always surjective over $\mathbb{Z}_c^{n \times n}$: reachability of an arbitrary goal configuration depends on $\gcd(c, n+1)$, meaning that a non-trivial subset of goal boards is provably unreachable from the all-zero start. Rather than a limitation of the encoding, this is a feature of the symbolic formulation: infeasibility (UNSAT) is derived directly and certifiably from the constraints themselves, providing an explicit, verifiable explanation for why no solution exists.
+
+\section{Video Link}
+
+\section{Running Instructions}
+
+\section{AI Usage}
+
+\end{document}
