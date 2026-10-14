@@ -5,7 +5,7 @@ GROUP 18:
 Artur Krystopchuk (104145) - arturkrystopchuk@tecnico.ulisboa.pt
 Sofia Ligeiro (116046) - sofiamligeiro@tecnico.ulisboa.pt
 
-Game state and rules for Alien Tiles.
+Game state and rules for Alien Tiles
 """
 
 from copy import deepcopy
@@ -22,13 +22,13 @@ class AlienTilesGame:
         self.previous_boards = []
 
     def empty_board(self):
-        """Create the all-zero starting board."""
+        """Create the all-zero starting board"""
         return [[0 for _ in range(self.size)] for _ in range(self.size)]
 
     def click_square(self, row, column):
-        """Click a zero-based square and update its row and column."""
+        """Click a zero-based square:  every square in its row and column advances one colour"""
         if not self.is_inside_board(row, column):
-            raise ValueError("The selected square is outside the board.")
+            raise ValueError("The selected square is outside the board")
 
         self.previous_boards.append(deepcopy(self.current_board))
 
@@ -44,7 +44,7 @@ class AlienTilesGame:
                     ) % self.number_of_colours
 
     def undo(self):
-        """Undo the latest click, if one exists."""
+        """Undo the latest click, if one exists"""
         if not self.previous_boards:
             return False
 
@@ -52,7 +52,7 @@ class AlienTilesGame:
         return True
 
     def reset(self):
-        """Return the puzzle to its all-zero starting board."""
+        """Return the puzzle to its all-zero starting board"""
         self.current_board = self.empty_board()
         self.previous_boards = []
 

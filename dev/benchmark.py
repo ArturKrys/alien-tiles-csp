@@ -97,7 +97,7 @@ def main():
 
     original_model = Model()
     original_model.add_string(ORIGINAL_MODEL)
-    improved_model = Model(HERE / "alien_tiles.mzn")
+    improved_model = Model(HERE.parent / "model" / "alien_tiles.mzn")
 
     test_cases = [
         ("random", board_size, number_of_colours,

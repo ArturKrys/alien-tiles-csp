@@ -11,14 +11,12 @@ CSP-based solver for Alien Tiles, using MiniZinc
 from pathlib import Path
 from minizinc import Instance, Model, Solver
 
-MODEL_PATH = Path(__file__).resolve().parent / "alien_tiles.mzn"
+MODEL_PATH = Path(__file__).resolve().parent.parent / "model" / "alien_tiles.mzn"
 
 
 def build_instance(game, solver_name="gecode"):
     """Create a MiniZinc instance for the given game's goal board"""
-    model = Model(MODEL_PATH)
-    solver = Solver.lookup(solver_name)
-    instance = Instance(solver, model)
+    instance = Instance(Solver.lookup(solver_name), Model(MODEL_PATH))
 
     instance["board_size"] = game.size
     instance["number_of_colours"] = game.number_of_colours
@@ -28,18 +26,18 @@ def build_instance(game, solver_name="gecode"):
 
 
 def solve(game, solver_name="gecode", time_limit=None):
-    """Solve the puzzle and return the click counts as a list of lists"""
+    """Return the optimal number of clicks per square as a list of lists"""
     instance = build_instance(game, solver_name)
     result = instance.solve(timeout=time_limit)
 
     if result.solution is None:
-        raise ValueError("No solution was found for this puzzle instance.")
+        raise ValueError("No solution was found for this puzzle instance")
 
     return result.solution.clicks_per_square
 
 
 def print_solution(clicks, number_of_colours):
-    """Print the click counts per square and the total number of clicks."""
+    """Print the click counts per square and the total number of clicks"""
     print("Solution (number of clicks per square):")
     for row in clicks:
         print(" ".join(str(value) for value in row))
@@ -49,7 +47,6 @@ def print_solution(clicks, number_of_colours):
 
 
 def run_model(game, solver_name="gecode", time_limit=None):
-    """Solve the current game's goal with the CSP model and report it."""
     clicks = solve(game, solver_name=solver_name, time_limit=time_limit)
     print_solution(clicks, game.number_of_colours)
     return clicks

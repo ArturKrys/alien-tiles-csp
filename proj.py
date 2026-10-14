@@ -5,50 +5,44 @@ GROUP 18:
 Artur Krystopchuk (104145) - arturkrystopchuk@tecnico.ulisboa.pt
 Sofia Ligeiro (116046) - sofiamligeiro@tecnico.ulisboa.pt
 
-Entry point for the Alien Tiles base game.
+Entry point for Alien Tiles (CSPLib 027)
 """
 
 import argparse
 
-from interface import (
+from alien_tiles.interface import (
     Terminal,
     choose_player,
     read_setup_file,
     read_setup_manually,
     run_human,
 )
-from solver import run_model
+from alien_tiles.solver import run_model
 
 
 def build_argument_parser():
-    parser = argparse.ArgumentParser(description="Play the base Alien Tiles game.")
-
+    parser = argparse.ArgumentParser(description="Play or solve Alien Tiles.")
+    
     parser.add_argument(
         "setup_file",
         nargs="?",
-        help=(
-            "optional .txt setup file; if omitted, setup is read from standard input"
-        ),
+        help="optional .txt setup file; if omitted, setup is read from standard input",
     )
-
     parser.add_argument(
         "--player",
         choices=("human", "model"),
         help="player mode; if omitted, the program asks interactively",
     )
-
     parser.add_argument(
         "--no-colour",
         action="store_true",
         help="disable ANSI colours in terminal output",
     )
-
     return parser
 
 
 def main():
-    parser = build_argument_parser()
-    arguments = parser.parse_args()
+    arguments = build_argument_parser().parse_args()
 
     try:
         player = choose_player(arguments.player)
@@ -58,18 +52,12 @@ def main():
         else:
             game = read_setup_manually()
 
-        terminal = Terminal(use_colours=not arguments.no_colour)
-
         if player == "model":
             run_model(game)
         else:
-            run_human(game, terminal)
+            run_human(game, Terminal(use_colours=not arguments.no_colour))
 
-    except (
-        ValueError,
-        NotImplementedError,
-        EOFError,
-    ) as error:
+    except (ValueError, EOFError) as error:
         print(f"Error: {error}")
         return 1
 

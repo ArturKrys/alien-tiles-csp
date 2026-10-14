@@ -29,16 +29,17 @@ Brute force is O(c ** (n * n)), so only run this for small n, c.
 
 import itertools
  
-from game import AlienTilesGame
-from solver import solve
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from alien_tiles.game import AlienTilesGame
+from alien_tiles.solver import solve
  
-# Full checks (brute force + solver validation): keep c ** (n*n) modest,
-# since every reachable goal sampled costs one real solve() call (~0.4s).
 SIZE_COLOUR_PAIRS = ((2, 2), (2, 3), (2, 4), (2, 5), (3, 2), (3, 3))
-SAMPLE_LIMIT = 15  # how many reachable goals to check per (size, colours)
- 
-# Reachability-only sweep: no solver calls, so this can afford to go wider.
-# c ** (n*n) grows fast, so n stays at 2 or 3 while c ranges further.
+SAMPLE_LIMIT = 15  
+
 REACHABILITY_SWEEP_PAIRS = (
     [(2, c) for c in range(2, 9)] + [(3, c) for c in range(2, 5)]
 )
