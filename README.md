@@ -18,6 +18,7 @@ The program follows these steps:
 
 1. Read a specific problem instance, either from standard input or a file.
 2. Encode the instance as a MiniZinc CSP model.
+3. Invoke the solver (Gecode).
 4. Parse the solver output.
 5. Write the solution to standard output.
 
@@ -35,7 +36,7 @@ dev/                                benchmark and tests
 requirements.txt
 ```
 - Human gameplay is supported.
-- Model gameplay currently raises a placeholder error.
+- Model gameplay solves the puzzle with the CSP model and prints the clicks per square.
 - Puzzle setups can be entered manually or loaded from a `.txt` file.
 
 ## Running the current version
@@ -74,5 +75,39 @@ python3 proj.py examples/example_board_1.txt
 ```
 
 Use `--no-colour` if ANSI colours are not supported by the terminal.
+
+### Other ways to run
+
+Without a setup file, the board is typed in at the prompt (standard input):
+
+```bash
+python3 proj.py --player model
+# Board size: 3
+# Number of colours: 3
+# Goal row 1: 1 1 1
+# Goal row 2: 1 0 0
+# Goal row 3: 1 0 0
+```
+
+With no arguments at all, the program asks for the mode and then for the board:
+
+```bash
+python3 proj.py
+```
+
+A goal board that cannot be reached is reported as having no solution:
+
+```bash
+python3 proj.py examples/example_board_unsolvable.txt --player model
+# Error: No solution was found for this puzzle instance
+```
+
+List every option:
+
+```bash
+python3 proj.py --help
+```
+
+Setup files contain `<size> <number_of_colours>` on the first line, followed by `<size>` rows of the goal board. Blank lines and lines starting with `#` are ignored (see `examples/`).
 
 ---

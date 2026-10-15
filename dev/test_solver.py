@@ -7,12 +7,9 @@ Sofia Ligeiro (116046) - sofiamligeiro@tecnico.ulisboa.pt
 
 Exhaustive correctness checks for the Alien Tiles CSP encoding.
 
-test_solver.py only checks that the solver's solution is VALID and no
-worse than an arbitrary non-optimal generator. It does not prove the
-solver finds the true minimum, and it never exercises an unreachable
-goal board (not every goal is necessarily reachable from the all-zero
-board -- whether it is depends on the rank, over Z_c, of the linear
-map induced by clicking).
+Not every goal is necessarily reachable from the all-zero board --
+whether it is depends on the rank, over Z_c, of the linear map induced
+by clicking.
 
 This script brute-forces the ENTIRE space of click patterns for small
 (n, c) pairs, giving:
@@ -24,6 +21,12 @@ This script brute-forces the ENTIRE space of click patterns for small
 
 Brute force is O(c ** (n * n)), so only run this for small n, c.
 
+How to run (from the project root, with the virtual environment active):
+
+    python3 dev/test_solver.py
+
+It takes well under a minute and ends with "All exhaustive checks passed."
+(exit code 0) or "Some checks FAILED." (exit code 1).
 """
 
 

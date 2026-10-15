@@ -12,8 +12,10 @@ Each cell shows "solve time / failures". Failures are the dead ends the
 solver hit during search (choices it had to undo); fewer failures means
 less wasted search, and unlike time it does not depend on the computer.
 
-    python3 benchmark.py            # 30 s limit per run
-    python3 benchmark.py 10         # custom limit in seconds
+How to run (from the project root, with the virtual environment active):
+
+    python3 dev/benchmark.py        # 30 s limit per run
+    python3 dev/benchmark.py 10     # custom limit in seconds
 """
 
 import random

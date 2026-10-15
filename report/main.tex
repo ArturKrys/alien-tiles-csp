@@ -1,34 +1,116 @@
-\documentclass{article}
-\usepackage[a4paper, margin=2cm]{geometry}
-\usepackage{graphicx}
-\usepackage{amsmath}
-\usepackage{titling}
+\documentclass[a4paper,9pt]{article}
 
-\setlength{\droptitle}{-3cm}
+\usepackage[margin=1.25cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
 
-\title{
-    {\small Symbolic Explainable Artificial Intelligence 2026/27}\\[0.3em]
-    \textbf{Alien Tiles Problem}
-}
-
-\author{
-    \textbf{Group 18}\\
-    Artur Krystopchuk 104145\\
-    Sofia Ligeiro 116046 
-}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+\setlist{nosep,leftmargin=*}
+\pagestyle{empty}
 
 \begin{document}
 
-\maketitle
-\vspace{-1cm}
+\begin{center}
+{\small Symbolic Explainable Artificial Intelligence 2026/27}\\
+\vspace{4pt}
+{\Large\textbf{027: Alien Tiles Problem}}\\[-1pt]
+\vspace{2pt}
+{\small \textbf{Group 18} -- Artur Krystopchuk (104145),
+Sofia Ligeiro (116046)}
+\end{center}
 
-\section{CSP Formulation and Solving Approach}
-The problem was encoded as a Constraint Optimisation Problem in MiniZinc. The decision variables $\text{clicks}[i,j] \in \{0, \dots, c-1\}$ denote how many times each cell is clicked; the domain is restricted to $c-1$ per cell without loss of generality, since clicking a cell $c$ times is congruent to not clicking it at all. For every cell $(r,s)$, a modular linear constraint enforces that the cumulative effect of all row $r$ and column $s$ clicks — corrected for the double count on the intersection cell $(r,s)$ itself — equals the goal value $\mod c$, yielding a system of $n^2$ simultaneous congruences. The objective function minimises $\sum_{i,j} \text{clicks}[i,j]$, directly encoding the "fewest moves" criterion central to the original CSPLib formulation. The model is solved via the Gecode finite-domain constraint solver, invoked programmatically through MiniZinc Python, which performs constraint propagation combined with branch-and-bound search to certify optimality of the returned solution. A notable property, established analytically and verified empirically through exhaustive enumeration on small instances, is that the click operation is not always surjective over $\mathbb{Z}_c^{n \times n}$: reachability of an arbitrary goal configuration depends on $\gcd(c, n+1)$, meaning that a non-trivial subset of goal boards is provably unreachable from the all-zero start. Rather than a limitation of the encoding, this is a feature of the symbolic formulation: infeasibility (UNSAT) is derived directly and certifiably from the constraints themselves, providing an explicit, verifiable explanation for why no solution exists.
+\textbf{1. Problem Description}
 
-\section{Video Link}
+The \href{https://www.csplib.org/Problems/prob027/}
+{Alien Tiles } consists of an $n\times n$ board with $c$ colours, represented by $\mathbb{Z}_c=\{0,\ldots,c-1\}$.
+Initially, every cell has colour zero. Clicking a cell
+increments the colours of all cells in its row and column,
+$\mod c$, with the clicked cell incremented only once.
+Given a target board $g$, the goal is to reach it using the
+minimum number of clicks. Although no MiniZinc model was provided on the CSPLib page for this problem, we chose to improve our initial formulation by introducing a reduced-variable model and symmetry-breaking constraints to enhance solver efficiency.
 
-\section{Running Instructions}
+\textbf{2. Model and Improvements}
 
-\section{AI Usage}
+\textbf{Baseline:}
+The variables are $x_{ij}\in\{0,\ldots,c-1\}$, the number of clicks on square
+$(i,j)$, stored in \texttt{clicks\_per\_square}, an $n\times n$ array with one
+entry per square of the board. Clicking a square $c$ times brings every colour
+back to where it was, so more than $c-1$ clicks are never needed. Every square
+must end with its goal colour:
+\[
+\Big(\underbrace{\sum_{k=1}^{n}x_{ik}}_{\text{clicks in row }i}
++\underbrace{\sum_{k=1}^{n}x_{kj}}_{\text{clicks in column }j}
+-\underbrace{x_{ij}}_{\text{counted twice}}\Big)\bmod c=g_{ij}
+\qquad\forall i,j,
+\]
+and we minimize the total number of clicks $\sum_{i,j}x_{ij}$. The solver has to
+choose all $n^2$ values of $x$.
+
+\textbf{Reduced-Variable Formulation:}
+The colour of a square only depends on the total clicks in its row, the total
+clicks in its column, and its own clicks. We store the row and column totals
+(mod $c$) in \texttt{row\_clicks\_mod\_colours} and
+\texttt{column\_clicks\_mod\_colours}, one value per row and per column:
+\[
+R_i=\Big(\underbrace{\sum_{k=1}^{n}x_{ik}}_{\text{clicks in row }i}\Big)\bmod c,
+\qquad
+C_j=\Big(\underbrace{\sum_{k=1}^{n}x_{kj}}_{\text{clicks in column }j}\Big)\bmod c.
+\]
+The goal condition then becomes $(R_i+C_j-x_{ij})\bmod c=g_{ij}$, so
+\[
+x_{ij}=(\underbrace{R_i}_{\text{row total}}+\underbrace{C_j}_{\text{column total}}
+-\underbrace{g_{ij}}_{\text{goal}})\bmod c.
+\]
+So once the solver has chosen the $n$ row totals and the $n$ column totals, the
+clicks of every square are fixed. We therefore make Gecode choose only
+$R_1,\ldots,R_n,C_1,\ldots,C_n$ (\texttt{int\_search}): $c^{2n}$ combinations
+instead of $c^{n^2}$ (for $n=6$, $c=3$: $5.3\times10^5$ instead of
+$1.5\times10^{17}$). The model still checks that the computed clicks really add
+up to $R_i$ and $C_j$, so no wrong totals are accepted, and both models have
+exactly the same solutions and the same minimum.
+For example, for \texttt{example\_board\_1.txt} ($c=3$, goal rows $111$, $100$,
+$100$), choosing $R=C=(1,0,0)$ gives $x_{11}=1+1-1=1$ and $x_{ij}=0$ elsewhere:
+one click on the top-left square.
+
+\textbf{Symmetry breaking.}
+The solver guesses the totals $R$ and $C$ and rejects the guesses that fail. For
+the goal with rows $110$, $110$, $110$ ($c=3$), all rows are identical, so
+reordering the row totals never changes the outcome: $R=(2,0,1)$ and
+$R=(0,1,2)$ fail or succeed together, and checking both is wasted work. We
+therefore require $R_1\le R_2\le R_3$ (10 of the 27 guesses for $R$ remain) and,
+as columns 1 and 2 are identical, $C_1\le C_2$. The solver checks 180 guesses
+instead of 729, and the only solution ($R=(1,1,1)$, $C=(0,0,0)$: one click on
+each square of column 3) still satisfies the rules. If the goal is symmetric
+(row $j$ equals column $j$), swapping $R$ with $C$ also never changes the
+outcome, so \texttt{lex\_lesseq}$(R,C)$ keeps one of the two: compare $R_1$ with
+$C_1$, then $R_2$ with $C_2$, and so on, like sorting words, and $R$ must not
+come after $C$. No solution is ever removed, only repeated guesses.
+
+\textbf{3. Execution}
+
+\textbf{Requirements:} Python 3.12+, MiniZinc 2.10.1 with Gecode, and the Python \texttt{minizinc} package.
+\begin{verbatim}
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python3 proj.py examples/example_board_1.txt --player model
+\end{verbatim}
+The \texttt{--player} option selects the mode:
+\texttt{model} solves the puzzle with the CSP model and prints the number of clicks
+for each square and the total; \texttt{human} starts an interactive game in the terminal. If omitted, the program asks which mode to use. More details and
+usage information can be found in the \texttt{README.md} file.
+
+\textbf{4. Generative AI Use}
+
+Generative AI was used at Yellow Level (Nível 1), in
+accordance with the institutional guidelines, to brainstorm
+modelling ideas, discuss the reformulation and symmetry
+breaking, review code and tests, and improve this report.
+
+\textbf{5. Video:}
+
+adicionar link
 
 \end{document}
