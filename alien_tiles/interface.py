@@ -18,6 +18,8 @@ class Terminal:
 
     COLOUR_CODES = (31, 32, 33, 34, 35, 36, 91, 92, 93, 94, 95, 96)
     RESET = "\033[0m"
+    SEPARATOR_MIN_WIDTH = 40
+    COLUMN_GAP = 6
 
     def __init__(self, use_colours=True):
         self.use_colours = use_colours and not os.environ.get("NO_COLOR")
@@ -40,17 +42,84 @@ class Terminal:
             legend.append(self.board_colour(value))
         print("Colours:", " ".join(legend))
 
+    @staticmethod
+    def plain_row(row):
+        """Row without colour codes, used to measure the real width"""
+        return " ".join(f"[{value}]" for value in row)
+
     def display_game(self, game):
+        current = game.current_board
+        goal = game.goal_board
+
+        column_width = max(len(self.plain_row(row)) for row in goal)
+        total_width = max(
+            self.SEPARATOR_MIN_WIDTH, 2 * column_width + self.COLUMN_GAP
+        )
+
+        # Round separator
+        title = f" Moves: {game.number_of_moves()} "
         print()
-        print(self.colour("Current board", 36))
-        self.print_board(game.current_board, game.number_of_colours)
+        print(self.colour(title.center(total_width, "="), 33))
+
+        # Column headers
+        header = "CURRENT BOARD".ljust(column_width + self.COLUMN_GAP)
+        print(self.colour(header, 36) + self.colour("GOAL BOARD", 35))
+
+        # Both boards side by side
+        for current_row, goal_row in zip(current, goal):
+            left = " ".join(self.board_colour(value) for value in current_row)
+            right = " ".join(self.board_colour(value) for value in goal_row)
+            padding = " " * (column_width - len(self.plain_row(current_row)) + self.COLUMN_GAP)
+            print(left + padding + right)
+
+        legend = " ".join(
+            self.board_colour(value) for value in range(game.number_of_colours)
+        )
+        print()
+        print("Colours:", legend)
+
+    def click_cell(self, value, width):
+        """A square of the click matrix: dim dot for zero, highlighted otherwise"""
+        if value == 0:
+            return self.colour(".".center(width), 90)
+        return self.colour(f"[{value}]".center(width), 93)
+
+    def display_solution(self, game, clicks, seconds=None):
+        goal = game.goal_board
+        column_width = max(len(self.plain_row(row)) for row in goal)
+        total_width = max(
+            self.SEPARATOR_MIN_WIDTH, 2 * column_width + self.COLUMN_GAP
+        )
+        cell_width = len(str(game.number_of_colours - 1)) + 2
+        total_clicks = sum(sum(row) for row in clicks)
 
         print()
-        print(self.colour("Goal board", 35))
-        self.print_board(game.goal_board, game.number_of_colours)
+        print(self.colour(" MODEL SOLUTION ".center(total_width, "="), 32))
+
+        header = "GOAL BOARD".ljust(column_width + self.COLUMN_GAP)
+        print(self.colour(header, 35) + self.colour("CLICKS PER SQUARE", 93))
+
+        for goal_row, click_row in zip(goal, clicks):
+            left = " ".join(self.board_colour(value) for value in goal_row)
+            padding = " " * (
+                column_width - len(self.plain_row(goal_row)) + self.COLUMN_GAP
+            )
+            right = " ".join(self.click_cell(value, cell_width) for value in click_row)
+            print(left + padding + right)
+
+        steps = []
+        for row_index, row in enumerate(clicks):
+            for column_index, times in enumerate(row):
+                if times:
+                    label = f"({row_index + 1},{column_index + 1})"
+                    steps.append(label + (f" x{times}" if times > 1 else ""))
 
         print()
-        print(f"Moves: {game.number_of_moves()}")
+        print("Click list:", ", ".join(steps))
+        summary = f"Total clicks: {total_clicks}"
+        if seconds is not None:
+            summary += f"  (time: {seconds:.2f} s)"
+        print(self.colour(summary, 32))
 
 
 def read_non_empty_lines(file_path):

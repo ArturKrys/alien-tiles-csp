@@ -53,7 +53,7 @@ def main():
             game = read_setup_manually()
 
         if player == "model":
-            run_model(game)
+            run_model(game, Terminal(use_colours=not arguments.no_colour))
         else:
             run_human(game, Terminal(use_colours=not arguments.no_colour))
 

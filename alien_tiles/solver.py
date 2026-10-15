@@ -7,9 +7,11 @@ Sofia Ligeiro (116046)
 
 CSP-based solver for Alien Tiles, using MiniZinc
 """
+import time
 
 from pathlib import Path
 from minizinc import Instance, Model, Solver
+from alien_tiles.interface import Terminal
 
 MODEL_PATH = Path(__file__).resolve().parent.parent / "model" / "alien_tiles.mzn"
 
@@ -36,17 +38,16 @@ def solve(game, solver_name="gecode", time_limit=None):
     return result.solution.clicks_per_square
 
 
-def print_solution(clicks, number_of_colours):
-    """Print the click counts per square and the total number of clicks"""
-    print("Solution (number of clicks per square):")
-    for row in clicks:
-        print(" ".join(str(value) for value in row))
 
-    total_clicks = sum(value for row in clicks for value in row)
-    print(f"\nTotal clicks: {total_clicks}")
+def run_model(game, terminal=None, solver_name="gecode", time_limit=None):
+    """Solve the game and print the solution"""
+    if terminal is None:
+        terminal = Terminal()
 
-
-def run_model(game, solver_name="gecode", time_limit=None):
+    start = time.perf_counter()
     clicks = solve(game, solver_name=solver_name, time_limit=time_limit)
-    print_solution(clicks, game.number_of_colours)
+    seconds = time.perf_counter() - start
+
+    terminal.display_solution(game, clicks, seconds)
+
     return clicks
