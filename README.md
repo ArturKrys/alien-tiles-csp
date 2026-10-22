@@ -5,6 +5,8 @@ Group 18 - Symbolic Explainable Artificial Intelligence 26/27
 - Artur Krystopchuk (104145)
 - Sofia Ligeiro (116046)
 
+https://github.com/user-attachments/assets/ae9ae7c2-3593-4490-9cf3-08e2033a74e6
+
 ## Assignment requirements
 
 The project asks us to solve a problem as a **Constraint Satisfaction Problem (CSP)** using Python and MiniZinc.
